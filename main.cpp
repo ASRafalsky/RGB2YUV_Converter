@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <thread>
-#include "improc.h"
+//#include "improc.h"
 #include "Frame.h"
 #include "ImageProcessing.h"
 
@@ -14,14 +14,14 @@
 
 using namespace std;
 
-const char	*yuvfile = "park_joy_1080p50.yuv";
-const char	*NewYUV = "NEW.yuv";
+const char	*yuvfile	= "park_joy_1080p50.yuv";
+const char	*NewYUV		= "NEW.yuv";
 const char	*bitmapfile = "test_colorbars_1920x1080.bmp";
 
-const uint32_t RGB_Width = 1920;
-const uint32_t RGB_Height = 1080;
-const uint32_t YUV_Width = 1920;
-const uint32_t YUV_Height = 1080;
+const uint32_t RGB_Width	= 1920;
+const uint32_t RGB_Height	= 1080;
+const uint32_t YUV_Width	= 1920;
+const uint32_t YUV_Height	= 1080;
 
 #ifdef TEST_EN
 // в случае несовпадения значений в массивах, выводятся номер элементов, и разность их значений.
@@ -194,7 +194,6 @@ int main()
 #endif // SMID
 
 #ifdef THREAD
-
 	yuv_from_rgb_frame = new uint8_t[YUV_Frame.YUVframeSize()];
 
 	uint64_t imSize = RGB_Frame.imageSize();
@@ -217,15 +216,18 @@ int main()
 	uint64_t vpos_st_2 = vpos_st_1 + imSize / 16;
 	uint64_t vpos_st_3 = vpos_st_2 + imSize / 16;
 
-	thread t0(Bitmap2Yuv420p_v2, ref(bgr_frame), RGB_bmp_st_0, ref(yuv_from_rgb_frame), RGB_Width, RGB_Height / 4, upos_st_0, vpos_st_0);
-	thread t1(Bitmap2Yuv420p_v2, ref(bgr_frame), RGB_bmp_st_1, ref(yuv_from_rgb_frame), RGB_Width, RGB_Height / 4, upos_st_1, vpos_st_1);
-	thread t2(Bitmap2Yuv420p_v2, ref(bgr_frame), RGB_bmp_st_2, ref(yuv_from_rgb_frame), RGB_Width, RGB_Height / 4, upos_st_2, vpos_st_2);
-	thread t3(Bitmap2Yuv420p_v2, ref(bgr_frame), RGB_bmp_st_3, ref(yuv_from_rgb_frame), RGB_Width, RGB_Height / 4, upos_st_3, vpos_st_3);
+	uint16_t height_per_thread = RGB_Height / 4;
+
+	thread t0(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_0, upos_st_0, vpos_st_0, height_per_thread);
+	thread t1(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_1, upos_st_1, vpos_st_1, height_per_thread);
+	thread t2(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_2, upos_st_2, vpos_st_2, height_per_thread);
+	thread t3(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_3, upos_st_3, vpos_st_3, height_per_thread);
 
 	t0.join();
 	t1.join();
 	t2.join();
 	t3.join();
+
 #endif // THREAD
 
 #ifdef TEST_EN
@@ -244,14 +246,14 @@ int main()
 	//кол-во кадров можно посчитать, но для отладки так было удобнее.)
 	uint8_t* yuv_frame;
 	uint64_t YUV_frameSize = YUV_Frame.YUVframeSize();
-	while (i < 1)
+	while (!feof(f))
 	{
 		yuv_frame = YUV_Frame.readYUV(i);
 		for (uint64_t n = 0; n < YUV_frameSize; n++)
 		{
 			*(yuv_frame + n) = (*(yuv_frame + n) + *(yuv_from_rgb_frame + n)) / 2;
 		}
-		fwrite(yuv_frame, sizeof(uint8_t), YUV_frameSize, f);
+		fwrite(yuv_from_rgb_frame, sizeof(uint8_t), YUV_frameSize, f);
 		i++;
 	}
 	fclose(f);

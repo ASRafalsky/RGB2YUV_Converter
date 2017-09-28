@@ -24,7 +24,9 @@ public:
 	ImageProcessing(uint16_t, uint16_t);
 	~ImageProcessing();
 
-	uint8_t* Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset);
+	//uint8_t* Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th);
+	void Bitmap2Yuv420p(uint8_t *bgr, uint8_t *yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th);
 	uint8_t* Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos);
+	uint8_t* GetYUV();
 };
 

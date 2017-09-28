@@ -8,7 +8,7 @@
 #include "emmintrin.h"
 #include "tmmintrin.h"
 
-uint8_t Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset);
+//uint8_t Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset);
 
 uint8_t Bitmap2Yuv420p_v2(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset);
 

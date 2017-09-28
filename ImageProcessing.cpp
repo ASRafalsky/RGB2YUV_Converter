@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "ImageProcessing.h"
 
-using namespace std;
-
 
 ImageProcessing::ImageProcessing(uint16_t Width, uint16_t Height)
 {
@@ -27,10 +25,10 @@ ImageProcessing::~ImageProcessing()
 	delete[] v;
 }
 
-uint8_t* ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset)
+void ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint8_t *yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th)
 {
 	uint64_t i = bgr_offset;
-	for (uint16_t line = 0; line < height; line += 2)
+	for (uint16_t line = 0; line < height_p_th; line += 2)
 	{
 		for (uint16_t x = 0; x < width; x += 2)
 		{
@@ -38,16 +36,16 @@ uint8_t* ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint
 			uint8_t g = *(bgr + 3 * i + 1);
 			uint8_t b = *(bgr + 3 * i);
 
-			YUV[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
+			yuv[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
 
-			YUV[upos_offset++] = (((-43 * r + -84 * g + 127 * b) >> 8) + 128);
-			YUV[vpos_offset++] = (((127 * r + -106 * g + -21 * b) >> 8) + 128);
+			yuv[upos_offset++] = (((-43 * r + -84 * g + 127 * b) >> 8) + 128);
+			yuv[vpos_offset++] = (((127 * r + -106 * g + -21 * b) >> 8) + 128);
 
 			r = *(bgr + 3 * i + 2);
 			g = *(bgr + 3 * i + 1);
 			b = *(bgr + 3 * i);
 
-			YUV[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
+			yuv[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
 		}
 		for (uint16_t x = 0; x < width; x += 1)
 		{
@@ -55,10 +53,10 @@ uint8_t* ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint
 			uint8_t g = *(bgr + 3 * i + 1);
 			uint8_t b = *(bgr + 3 * i);
 
-			YUV[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
+			yuv[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
 		}
 	}
-	return (YUV);
+	//return (YUV);
 }
 
 uint8_t* ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos)
@@ -134,5 +132,10 @@ uint8_t* ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t 
 	memcpy_s(YUV + image_size, YUV_frameSize, u, uv_size);
 	memcpy_s(YUV + image_size + uv_size, YUV_frameSize, v, uv_size);
 
+	return (YUV);
+}
+
+uint8_t* ImageProcessing::GetYUV()
+{
 	return (YUV);
 }

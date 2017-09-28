@@ -54,7 +54,7 @@ uint8_t* Frame::readBMP()
 	return (frame);
 }
 
-uint8_t* Frame::readYUV(uint16_t framenum)
+uint8_t* Frame::readYUV(uint64_t framenum)
 {
 	fopen_s(&f, filename, "rb");
 	if (f == NULL)

@@ -22,6 +22,6 @@ public:
 	uint64_t imageSize();
 
 	uint8_t* readBMP();
-	uint8_t* readYUV(uint16_t framenum);
+	uint8_t* readYUV(uint64_t framenum);
 };
 

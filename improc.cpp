@@ -37,12 +37,12 @@ static int uv_calc(uint8_t *bgr, uint64_t bgr_offset, uint8_t *uv, uint64_t upos
 	return (1);
 }
 
-uint8_t Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset)
+/*uint8_t Bitmap2Yuv420p(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset)
 {
 	y_calc(bgr, bgr_offset, yuv, width, height);
 	uv_calc(bgr, bgr_offset, yuv, upos_offset, vpos_offset, width, height);
 	return (1);
-}
+}*/
 
 uint8_t Bitmap2Yuv420p_v2(uint8_t *bgr, uint64_t bgr_offset, uint8_t *yuv, uint16_t width, uint16_t height, uint32_t upos_offset, uint32_t vpos_offset)
 {
