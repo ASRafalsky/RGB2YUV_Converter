@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <thread>
-//#include "improc.h"
 #include "Frame.h"
 #include "ImageProcessing.h"
 
@@ -181,11 +180,14 @@ int main()
 	*/
 
 
-	Frame RGB_Frame(RGB_Width, RGB_Height, bitmapfile);
-	Frame YUV_Frame(YUV_Width, YUV_Height, yuvfile);
+	Frame RGB_Frame(RGB_Width, RGB_Height, bitmapfile, "rb");
+	Frame YUV_Frame(YUV_Width, YUV_Height, yuvfile, "rb");
+	Frame NewYUV_Frame(YUV_Width, YUV_Height, NewYUV, "wb");
 	ImageProcessing RGB2YUV(YUV_Width, YUV_Height);
 
-	uint8_t* bgr_frame = RGB_Frame.readBMP();
+	RGB_Frame.readBMP();
+
+	uint8_t* bgr_frame = RGB_Frame.getFrame();
 
 	uint8_t* yuv_from_rgb_frame = NULL;
 
@@ -234,29 +236,18 @@ int main()
 	uint64_t n = test(bgr_frame, yuv_from_rgb_frame, YUV_Frame.YUVframeSize(), RGB_Width, RGB_Height);
 	return (n);
 #endif // TEST_EN
+	
 
-	//читаем yuv и накладываем картинку
-	FILE* f = NULL;
-	fopen_s(&f, NewYUV, "wb");
-	if (f == NULL)
-	{
-		fprintf(stderr, "Cannot open yuvfile\n");
-		return (0);
-	}
-	//кол-во кадров можно посчитать, но для отладки так было удобнее.)
 	uint8_t* yuv_frame;
-	uint64_t YUV_frameSize = YUV_Frame.YUVframeSize();
-	while (!feof(f))
+	uint64_t YUV_imSize1 = YUV_Frame.imageSize();
+	uint64_t YUV_imSize2 = RGB_Frame.imageSize();
+	while (YUV_Frame.readYUVFrame(i))
 	{
-		yuv_frame = YUV_Frame.readYUV(i);
-		for (uint64_t n = 0; n < YUV_frameSize; n++)
-		{
-			*(yuv_frame + n) = (*(yuv_frame + n) + *(yuv_from_rgb_frame + n)) / 2;
-		}
-		fwrite(yuv_from_rgb_frame, sizeof(uint8_t), YUV_frameSize, f);
-		i++;
+		yuv_frame = YUV_Frame.getFrame();
+		ImageProcessing::FrameAdd(yuv_frame, YUV_imSize1, yuv_from_rgb_frame, YUV_imSize2);
+		NewYUV_Frame.writeYUVFrame(yuv_frame);
+		++i;
 	}
-	fclose(f);
 
 #ifdef THREAD
 	delete[] yuv_from_rgb_frame;

@@ -17,7 +17,6 @@ ImageProcessing::ImageProcessing(uint16_t Width, uint16_t Height)
 	v = new uint8_t[uv_size + 12];
 }
 
-
 ImageProcessing::~ImageProcessing()
 {
 	delete[] YUV;
@@ -25,7 +24,7 @@ ImageProcessing::~ImageProcessing()
 	delete[] v;
 }
 
-void ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint8_t *yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th)
+void ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th)
 {
 	uint64_t i = bgr_offset;
 	for (uint16_t line = 0; line < height_p_th; line += 2)
@@ -56,10 +55,9 @@ void ImageProcessing::Bitmap2Yuv420p(uint8_t *bgr, uint8_t *yuv, uint64_t bgr_of
 			yuv[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
 		}
 	}
-	//return (YUV);
 }
 
-uint8_t* ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos)
+uint8_t ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos)
 {
 	uint64_t i = 0;
 
@@ -132,7 +130,44 @@ uint8_t* ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t 
 	memcpy_s(YUV + image_size, YUV_frameSize, u, uv_size);
 	memcpy_s(YUV + image_size + uv_size, YUV_frameSize, v, uv_size);
 
-	return (YUV);
+	return (1);
+}
+
+uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint64_t image1_size, uint8_t *frame2, uint64_t image2_size)
+{
+	uint64_t cnt = image1_size;
+	uint64_t v1_pos = image1_size + image1_size / 4;
+	uint64_t v2_pos = image2_size + image2_size / 4;
+
+	if (image1_size > image2_size)
+		cnt = image2_size;
+
+	for (uint64_t n = 0; n < cnt; n++)
+	{
+		*(frame1 + n) = (*(frame1 + n) + *(frame2 + n)) / 2;
+	}
+	for (uint64_t n = 0; n < cnt / 4; n++)
+	{
+		*(frame1 + image1_size + n) = (*(frame1 + image1_size + n) + *(frame2 + image2_size + n)) / 2;
+		*(frame1 + v1_pos + n) = (*(frame1 + v1_pos + n) + *(frame2 + v2_pos + n)) / 2;
+	}
+	return (1);
+}
+
+uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint64_t image1_size, uint8_t *frame2, uint64_t image2_size)
+{
+	/*uint64_t cnt = image1_size;
+	uint64_t v1_pos = image1_size + image1_size / 4;
+	uint64_t v2_pos = image2_size + image2_size / 4;
+
+	if (image1_size > image2_size)
+		cnt = image2_size;
+	for (uint16_t n = 0; n < cnt; n++)
+	{
+		__m128i chunk0 = _mm_loadu_si128((__m128i*)frame1);
+		__m128i chunk1 = _mm_loadu_si128((__m128i*)(frame1 + 12));
+	}*/
+	return (1);
 }
 
 uint8_t* ImageProcessing::GetYUV()
