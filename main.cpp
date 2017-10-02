@@ -184,6 +184,7 @@ int main()
 	Frame YUV_Frame(YUV_Width, YUV_Height, yuvfile, "rb");
 	Frame NewYUV_Frame(YUV_Width, YUV_Height, NewYUV, "wb");
 	ImageProcessing RGB2YUV(YUV_Width, YUV_Height);
+	ImageProcessing FRAMES_ADD(YUV_Width, YUV_Height, YUV_Width, YUV_Height);
 
 	RGB_Frame.readBMP();
 
@@ -192,7 +193,8 @@ int main()
 	uint8_t* yuv_from_rgb_frame = NULL;
 
 #ifdef SMID
-	yuv_from_rgb_frame = RGB2YUV.Bitmap2yuv_SMID(bgr_frame, 0, 0);
+	RGB2YUV.Bitmap2yuv_SMID(bgr_frame, 0, 0);
+	yuv_from_rgb_frame = RGB2YUV.GetYUV();
 #endif // SMID
 
 #ifdef THREAD
@@ -244,8 +246,15 @@ int main()
 	while (YUV_Frame.readYUVFrame(i))
 	{
 		yuv_frame = YUV_Frame.getFrame();
-		ImageProcessing::FrameAdd(yuv_frame, YUV_imSize1, yuv_from_rgb_frame, YUV_imSize2);
-		NewYUV_Frame.writeYUVFrame(yuv_frame);
+		for (uint16_t x = 0; x < 5000; x += 1) {
+#ifndef SMID
+			ImageProcessing::FrameAdd(yuv_frame, YUV_imSize1, yuv_from_rgb_frame, YUV_imSize2);
+			//NewYUV_Frame.writeYUVFrame(yuv_frame);
+#else
+			FRAMES_ADD.FrameAdd_SMID(yuv_frame, yuv_from_rgb_frame);
+			//NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
+#endif // SMID
+		}
 		++i;
 	}
 

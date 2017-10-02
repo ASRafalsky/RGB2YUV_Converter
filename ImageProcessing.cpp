@@ -17,6 +17,36 @@ ImageProcessing::ImageProcessing(uint16_t Width, uint16_t Height)
 	v = new uint8_t[uv_size + 12];
 }
 
+ImageProcessing::ImageProcessing(uint16_t Width1, uint16_t Height1, uint16_t Width2, uint16_t Height2)
+{
+	width = Width1;
+	height = Height1;
+
+	width1 = Width2;
+	height1 = Height2;
+
+	image_size = width * height;
+	image_size1 = width1 * height1;
+	uv_size = image_size / 4;
+	uv_size1 = image_size1 / 4;
+
+	YUV_frameSize = image_size + image_size / 2;
+	YUV_frameSize1 = image_size1 + image_size1 / 2;
+
+	if (image_size > image_size1)
+	{
+		YUV = new uint8_t[YUV_frameSize];
+		u = new uint8_t[uv_size + 8];
+		v = new uint8_t[uv_size + 8];
+	}
+	else
+	{
+		YUV = new uint8_t[YUV_frameSize1];
+		u = new uint8_t[uv_size1 + 8];
+		v = new uint8_t[uv_size1 + 8];
+	}
+}
+
 ImageProcessing::~ImageProcessing()
 {
 	delete[] YUV;
@@ -154,19 +184,65 @@ uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint64_t image1_size, uint8_t
 	return (1);
 }
 
-uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint64_t image1_size, uint8_t *frame2, uint64_t image2_size)
+uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint8_t *frame2)
 {
-	/*uint64_t cnt = image1_size;
-	uint64_t v1_pos = image1_size + image1_size / 4;
-	uint64_t v2_pos = image2_size + image2_size / 4;
+	uint64_t cnt = image_size;
+	uint64_t uv_cnt = 0;
+	uint64_t out_frame_size = YUV_frameSize1;
+	uint64_t out_uv_size = uv_size1;
 
-	if (image1_size > image2_size)
-		cnt = image2_size;
-	for (uint16_t n = 0; n < cnt; n++)
+	uint64_t v_off1 = image_size + uv_size;
+	uint64_t v_off2 = image_size1 + uv_size1;
+
+	__m128i zero = _mm_set1_epi8(0);
+	__m128i ssse3_youtl = _mm_set_epi8(-1, -1, -1, -1, -1, -1, -1, -1, 14, 12, 10, 8, 6, 4, 2, 0);
+
+	if (image_size > image_size1)
 	{
-		__m128i chunk0 = _mm_loadu_si128((__m128i*)frame1);
-		__m128i chunk1 = _mm_loadu_si128((__m128i*)(frame1 + 12));
-	}*/
+		cnt = image_size1;
+		out_frame_size = YUV_frameSize;
+		out_uv_size = uv_size;
+	}
+
+	for (uint64_t n = 0; n < cnt; n += 64)
+	{
+		__m128i y_chunk00 = _mm_loadu_si128((__m128i*)(frame1 + n));
+		__m128i y_chunk01 = _mm_loadu_si128((__m128i*)(frame1 + n + 16));
+		__m128i y_chunk02 = _mm_loadu_si128((__m128i*)(frame1 + n + 32));
+		__m128i y_chunk03 = _mm_loadu_si128((__m128i*)(frame1 + n + 48));
+
+		__m128i y_chunk10 = _mm_loadu_si128((__m128i*)(frame2 + n));
+		__m128i y_chunk11 = _mm_loadu_si128((__m128i*)(frame2 + n + 16));
+		__m128i y_chunk12 = _mm_loadu_si128((__m128i*)(frame2 + n + 32));
+		__m128i y_chunk13 = _mm_loadu_si128((__m128i*)(frame2 + n + 48));
+
+		__m128i u_chunk1 = _mm_loadu_si128((__m128i*)(frame1 + image_size + uv_cnt));
+
+		__m128i u_chunk2 = _mm_loadu_si128((__m128i*)(frame2 + image_size1 + uv_cnt));
+
+		__m128i v_chunk1 = _mm_loadu_si128((__m128i*)(frame1 + v_off1 + uv_cnt));
+
+		__m128i v_chunk2 = _mm_loadu_si128((__m128i*)(frame2 + v_off2 + uv_cnt));
+
+		_mm_storeu_si128((__m128i*)(YUV + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(y_chunk00, zero), _mm_unpacklo_epi8(y_chunk10, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 8 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(y_chunk00, zero), _mm_unpackhi_epi8(y_chunk10, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 16 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(y_chunk01, zero), _mm_unpacklo_epi8(y_chunk11, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 24 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(y_chunk01, zero), _mm_unpackhi_epi8(y_chunk11, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 32 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(y_chunk02, zero), _mm_unpacklo_epi8(y_chunk12, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 40 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(y_chunk02, zero), _mm_unpackhi_epi8(y_chunk12, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 48 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(y_chunk03, zero), _mm_unpacklo_epi8(y_chunk13, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(YUV + 56 + n), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(y_chunk03, zero), _mm_unpackhi_epi8(y_chunk13, zero)), 1), ssse3_youtl)));
+
+		_mm_storeu_si128((__m128i*)(u + uv_cnt), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(u_chunk1, zero), _mm_unpacklo_epi8(u_chunk2, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(u + 8 + uv_cnt), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(u_chunk1, zero), _mm_unpackhi_epi8(u_chunk2, zero)), 1), ssse3_youtl)));
+
+		_mm_storeu_si128((__m128i*)(v + uv_cnt), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpacklo_epi8(v_chunk1, zero), _mm_unpacklo_epi8(v_chunk2, zero)), 1), ssse3_youtl)));
+		_mm_storeu_si128((__m128i*)(v + 8 + uv_cnt), (_mm_shuffle_epi8(_mm_srli_epi16(_mm_add_epi16(_mm_unpackhi_epi8(v_chunk1, zero), _mm_unpackhi_epi8(v_chunk2, zero)), 1), ssse3_youtl)));
+
+		uv_cnt += 16;
+	}
+	memcpy_s(YUV + cnt, out_frame_size, u, out_uv_size);
+	memcpy_s(YUV + cnt + out_uv_size, out_frame_size, v, out_uv_size);
 	return (1);
 }
 
