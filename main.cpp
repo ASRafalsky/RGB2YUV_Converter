@@ -249,10 +249,10 @@ int main()
 		for (uint16_t x = 0; x < 5000; x += 1) {
 #ifndef SMID
 			ImageProcessing::FrameAdd(yuv_frame, YUV_imSize1, yuv_from_rgb_frame, YUV_imSize2);
-			//NewYUV_Frame.writeYUVFrame(yuv_frame);
+			NewYUV_Frame.writeYUVFrame(yuv_frame);
 #else
 			FRAMES_ADD.FrameAdd_SMID(yuv_frame, yuv_from_rgb_frame);
-			//NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
+			NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
 #endif // SMID
 		}
 		++i;
