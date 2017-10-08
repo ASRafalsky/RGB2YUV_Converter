@@ -7,8 +7,6 @@
 #include "tmmintrin.h"
 
 
-using namespace std;
-
 class ImageProcessing
 {
 private:
@@ -34,9 +32,9 @@ public:
 	~ImageProcessing();
 
 	void Bitmap2Yuv420p(uint8_t *bgr, uint8_t *yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th);
-	uint8_t Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos);
-	static uint8_t FrameAdd(uint8_t *frame1, uint64_t frame1_size, uint8_t *frame2, uint64_t frame2_size);
-	uint8_t FrameAdd_SMID(uint8_t *frame1, uint8_t *frame2);
+	uint8_t Bitmap2yuv_SIMD(uint8_t *bgr, uint32_t upos, uint32_t vpos);
+	uint8_t FrameAdd(uint8_t *frame1, uint8_t *frame2);
+	uint8_t FrameAdd_SIMD(uint8_t *frame1, uint8_t *frame2);
 	uint8_t* GetYUV();
 };
 

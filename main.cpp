@@ -8,10 +8,11 @@
 #include "ImageProcessing.h"
 
 #define THREAD
-//#define SMID
-//#define TEST_EN
+#ifndef THREAD
+	#define SIMD
+#endif // !THREAD
 
-using namespace std;
+//#define TEST_EN
 
 const char	*yuvfile	= "park_joy_1080p50.yuv";
 const char	*NewYUV		= "NEW.yuv";
@@ -27,22 +28,21 @@ const uint32_t YUV_Height	= 1080;
 // когда проверили соответствие всех элементов, возвращаем кол-во несовпадающих значений.
 //sample - указатель на эталонный массив
 //result - указатель на проверяемый массив
-uint64_t test(uint8_t *RGB_bmp, uint8_t* result, uint64_t YUV_frameSize, uint16_t width, uint16_t height)
+uint8_t test_conv(uint8_t *RGB_bmp, uint8_t* result, uint64_t imSize, uint16_t height)
 {
-	uint8_t *YUV_sample = (uint8_t*) malloc(YUV_frameSize);
+	ImageProcessing TEST_PROC(YUV_Width, YUV_Height);
+	uint8_t *YUV_sample = new uint8_t[imSize + imSize / 2];
 	if (YUV_sample == NULL)
 	{
 		fprintf(stderr, "Cannot create YUV_sample array\n");
 		return (0);
 	}
-
-	//Bitmap2Yuv420p(RGB_bmp, RGB_bmp_st_0, YUV_sample, 1920, 1080, upos_st_0, vpos_st_0);
-	Bitmap2Yuv420p_v2(RGB_bmp, 0, YUV_sample, width, height, width*height, width*height + width*height/4);
+	TEST_PROC.Bitmap2Yuv420p(RGB_bmp, YUV_sample, 0, imSize, imSize + imSize / 4, height);
 
 	uint64_t pix_err_cnt = 0;
-	uint32_t pix_err_value = 0;
+	uint8_t pix_err_value = 0;
 
-	for (uint64_t i = 0; i < width*height + width*height / 2; i++)
+	for (uint64_t i = 0; i < imSize + imSize / 2; i++)
 	{
 		pix_err_value = (*(YUV_sample + i) - *(result + i));
 		if ((*(YUV_sample + i) != *(result + i)))
@@ -53,132 +53,47 @@ uint64_t test(uint8_t *RGB_bmp, uint8_t* result, uint64_t YUV_frameSize, uint16_
 			++pix_err_cnt;
 		}
 	}
+	delete[] YUV_sample;
+	if(pix_err_cnt)
+	{
+		printf("pix error counter = %d", pix_err_cnt);
+		return (0);
+	}
+	return (1);
+}
 
-	free(YUV_sample);
-	return (pix_err_cnt);
+uint8_t test_add(uint8_t *frame1, uint8_t *frame2, uint8_t* result, uint64_t YUV_frameSize)
+{
+	ImageProcessing TEST_ADD_PROC(YUV_Width, YUV_Height, RGB_Width, RGB_Height);
+	TEST_ADD_PROC.FrameAdd(frame1, frame2);
+
+	uint64_t pix_err_cnt = 0;
+	uint8_t pix_err_value = 0;
+
+	for (uint64_t i = 0; i < YUV_frameSize; i++)
+	{
+		pix_err_value = (*(TEST_ADD_PROC.GetYUV() + i) - *(result + i));
+		if ((*(TEST_ADD_PROC.GetYUV() + i) != *(result + i)))
+		{
+			fprintf(stderr, "Frame adding error!!! \r\n");
+			printf("pix num = %d, val =, %d", i, pix_err_value);
+			printf("%s", "\r\n");
+			++pix_err_cnt;
+		}
+	}
+	if (pix_err_cnt)
+	{
+		printf("pix error counter = %d", pix_err_cnt);
+		return (0);
+	}
+	return (1);
 }
 #endif // TEST_EN
 
 int main()
 {
+
 	uint64_t i = 0;
-	/*
-	uint64_t imSize = (1920 * 1080);
-	uint64_t uvSize = imSize/4;
-	uint64_t YUV_frameSize = ((imSize) + (imSize) / 2);
-
-	uint8_t *RGB_bmp = (uint8_t*)malloc(imSize * 3);
-	if (RGB_bmp == NULL)
-	{
-		fprintf(stderr, "Cannot create RGB array\n");
-		return (0);
-	}
-	uint8_t *YUV1 = (uint8_t*)malloc(YUV_frameSize);//массив для хранения преобразованного bmp
-	if (YUV1 == NULL)
-	{
-		fprintf(stderr, "Cannot create YUV1 array\n");
-		return (0);
-	}
-	uint8_t *YUV2 = (uint8_t*)malloc(YUV_frameSize);//массив для наложения кадров и последующего вывода
-	if (YUV1 == NULL)
-	{
-		fprintf(stderr, "Cannot create YUV2 array\n");
-		return (0);
-	}
-
-	uint8_t *u = (uint8_t*)malloc(uvSize + 12);
-	if (u == NULL)
-	{
-		fprintf(stderr, "Cannot create u array\n");
-		return (0);
-	}
-
-	uint8_t *v = (uint8_t*)malloc(uvSize + 12);
-	if (v == NULL)
-	{
-		fprintf(stderr, "Cannot create v array\n");
-		return (0);
-	}
-	
-	readBMP(bitmapfile, RGB_bmp);
-	
-	//преобразование bmp to yuv
-#ifdef SMID
-	Bitmap2yuv_SMID(RGB_bmp, YUV1, u, v, imSize, uvSize, YUV_frameSize, 1920, 1080, 0, 0);
-#endif // SMID
-
-	uint64_t yuv1_st_1 = imSize / 4;
-	uint64_t yuv1_st_2 = imSize / 2;
-	uint64_t yuv1_st_3 = imSize / 4 + imSize / 2;
-
-	uint64_t RGB_bmp_st_0 = 0;
-	uint64_t RGB_bmp_st_1 = imSize / 4;
-	uint64_t RGB_bmp_st_2 = RGB_bmp_st_1 * 2;
-	uint64_t RGB_bmp_st_3 = RGB_bmp_st_2 + RGB_bmp_st_1;
-
-	uint64_t upos_st_0 = imSize;
-	uint64_t upos_st_1 = imSize + imSize / 16;
-	uint64_t upos_st_2 = upos_st_1 + imSize / 16;
-	uint64_t upos_st_3 = upos_st_2 + imSize / 16;
-
-	uint64_t vpos_st_0 = imSize + imSize / 4;
-	uint64_t vpos_st_1 = vpos_st_0 + imSize / 16;
-	uint64_t vpos_st_2 = vpos_st_1 + imSize / 16;
-	uint64_t vpos_st_3 = vpos_st_2 + imSize / 16;
-
-#ifdef THREAD
-	thread t0(Bitmap2Yuv420p_v2, ref(RGB_bmp), RGB_bmp_st_0, ref(YUV1), 1920, 1080 / 4, upos_st_0, vpos_st_0);
-	thread t1(Bitmap2Yuv420p_v2, ref(RGB_bmp), RGB_bmp_st_1, ref(YUV1), 1920, 1080 / 4, upos_st_1, vpos_st_1);
-	thread t2(Bitmap2Yuv420p_v2, ref(RGB_bmp), RGB_bmp_st_2, ref(YUV1), 1920, 1080 / 4, upos_st_2, vpos_st_2);
-	thread t3(Bitmap2Yuv420p_v2, ref(RGB_bmp), RGB_bmp_st_3, ref(YUV1), 1920, 1080 / 4, upos_st_3, vpos_st_3);
-
-	t0.join();
-	t1.join();
-	t2.join();
-	t3.join();
-#endif // THREAD
-
-#ifdef TEST_EN
-	uint64_t n = test(RGB_bmp, YUV1, YUV_frameSize, 1920, 1080);
-	free(RGB_bmp);
-	free(YUV1);
-	free(YUV2);
-	free(u);
-	free(v);
-
-	return (n);
-#endif // TEST_EN
-
-	
-	FILE* f = NULL;
-	fopen_s(&f, NewYUV, "wb");
-	if (f == NULL)
-	{
-		fprintf(stderr, "Cannot open yuvfile\n");
-		return (0);
-	}
-
-	//читаем yuv и накладываем картинку
-	//кол-во кадров можно посчитать, но для отладки так было удобнее.)
-	while (i < 500)
-	{
-		readYUVFrame(yuvfile, YUV2, 1920, 1080, YUV_frameSize, i);
-		for (uint64_t n = 0; n < YUV_frameSize; n++)
-		{
-			*(YUV2 + n) = (*(YUV2 + n) + *(YUV1 + n)) / 2;
-		}
-		fwrite(YUV2, sizeof(uint8_t), YUV_frameSize, f);
-		i++;
-	}
-	fclose(f);
-
-	free(RGB_bmp);
-	free(YUV1);
-	free(YUV2);
-	free(u);
-	free(v);
-	*/
-
 
 	Frame RGB_Frame(RGB_Width, RGB_Height, bitmapfile, "rb");
 	Frame YUV_Frame(YUV_Width, YUV_Height, yuvfile, "rb");
@@ -192,8 +107,8 @@ int main()
 
 	uint8_t* yuv_from_rgb_frame = NULL;
 
-#ifdef SMID
-	RGB2YUV.Bitmap2yuv_SMID(bgr_frame, 0, 0);
+#ifdef SIMD
+	RGB2YUV.Bitmap2yuv_SIMD(bgr_frame, 0, 0);
 	yuv_from_rgb_frame = RGB2YUV.GetYUV();
 #endif // SMID
 
@@ -222,10 +137,10 @@ int main()
 
 	uint16_t height_per_thread = RGB_Height / 4;
 
-	thread t0(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_0, upos_st_0, vpos_st_0, height_per_thread);
-	thread t1(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_1, upos_st_1, vpos_st_1, height_per_thread);
-	thread t2(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_2, upos_st_2, vpos_st_2, height_per_thread);
-	thread t3(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, ref(bgr_frame), ref(yuv_from_rgb_frame), RGB_bmp_st_3, upos_st_3, vpos_st_3, height_per_thread);
+	std::thread t0(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, std::ref(bgr_frame), std::ref(yuv_from_rgb_frame), RGB_bmp_st_0, upos_st_0, vpos_st_0, height_per_thread);
+	std::thread t1(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, std::ref(bgr_frame), std::ref(yuv_from_rgb_frame), RGB_bmp_st_1, upos_st_1, vpos_st_1, height_per_thread);
+	std::thread t2(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, std::ref(bgr_frame), std::ref(yuv_from_rgb_frame), RGB_bmp_st_2, upos_st_2, vpos_st_2, height_per_thread);
+	std::thread t3(&ImageProcessing::Bitmap2Yuv420p, &RGB2YUV, std::ref(bgr_frame), std::ref(yuv_from_rgb_frame), RGB_bmp_st_3, upos_st_3, vpos_st_3, height_per_thread);
 
 	t0.join();
 	t1.join();
@@ -233,28 +148,40 @@ int main()
 	t3.join();
 
 #endif // THREAD
-
-#ifdef TEST_EN
-	uint64_t n = test(bgr_frame, yuv_from_rgb_frame, YUV_Frame.YUVframeSize(), RGB_Width, RGB_Height);
-	return (n);
-#endif // TEST_EN
 	
-
 	uint8_t* yuv_frame;
 	uint64_t YUV_imSize1 = YUV_Frame.imageSize();
 	uint64_t YUV_imSize2 = RGB_Frame.imageSize();
 	while (YUV_Frame.readYUVFrame(i))
 	{
 		yuv_frame = YUV_Frame.getFrame();
-		for (uint16_t x = 0; x < 5000; x += 1) {
-#ifndef SMID
-			ImageProcessing::FrameAdd(yuv_frame, YUV_imSize1, yuv_from_rgb_frame, YUV_imSize2);
-			NewYUV_Frame.writeYUVFrame(yuv_frame);
+#ifndef SIMD
+
+		FRAMES_ADD.FrameAdd(yuv_frame, yuv_from_rgb_frame);
+
+#ifdef TEST_EN
+		if (!test_conv(bgr_frame, yuv_from_rgb_frame, YUV_Frame.imageSize(), RGB_Height))
+			fprintf(stderr, "conversation test error!!! \r\n");
+		system("pause");
+		return (1);
+#endif // TEST_EN
+
 #else
-			FRAMES_ADD.FrameAdd_SMID(yuv_frame, yuv_from_rgb_frame);
-			NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
-#endif // SMID
-		}
+
+		FRAMES_ADD.FrameAdd_SIMD(yuv_frame, yuv_from_rgb_frame);
+
+#ifdef TEST_EN
+		if (!test_conv(bgr_frame, yuv_from_rgb_frame, YUV_Frame.imageSize(), RGB_Height))
+			fprintf(stderr, "conversation test error!!! \r\n");
+
+		if(!test_add(yuv_frame, yuv_from_rgb_frame, FRAMES_ADD.GetYUV(), YUV_Frame.YUVframeSize()))
+			fprintf(stderr, "frame adding test error!!! \r\n");
+		system("pause");
+		return (1);
+#endif // TEST_EN
+
+#endif // SIMD
+		NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
 		++i;
 	}
 

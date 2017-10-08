@@ -87,7 +87,7 @@ void ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_of
 	}
 }
 
-uint8_t ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos)
+uint8_t ImageProcessing::Bitmap2yuv_SIMD(uint8_t *bgr, uint32_t upos, uint32_t vpos)
 {
 	uint64_t i = 0;
 
@@ -163,28 +163,39 @@ uint8_t ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t v
 	return (1);
 }
 
-uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint64_t image1_size, uint8_t *frame2, uint64_t image2_size)
+uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint8_t *frame2)
 {
-	uint64_t cnt = image1_size;
-	uint64_t v1_pos = image1_size + image1_size / 4;
-	uint64_t v2_pos = image2_size + image2_size / 4;
+	uint64_t cnt = image_size;
+	uint64_t uv_cnt = 0;
+	uint64_t out_frame_size = YUV_frameSize1;
+	uint64_t out_uv_size = uv_size1;
 
-	if (image1_size > image2_size)
-		cnt = image2_size;
+	uint64_t v_off1 = image_size + uv_size;
+	uint64_t v_off2 = image_size1 + uv_size1;
 
-	for (uint64_t n = 0; n < cnt; n++)
+	if (image_size > image_size1)
 	{
-		*(frame1 + n) = (*(frame1 + n) + *(frame2 + n)) / 2;
+		cnt = image_size1;
+		out_frame_size = YUV_frameSize;
+		out_uv_size = uv_size;
 	}
-	for (uint64_t n = 0; n < cnt / 4; n++)
+
+	for (uint64_t n = 0; n < cnt; n += 4)
 	{
-		*(frame1 + image1_size + n) = (*(frame1 + image1_size + n) + *(frame2 + image2_size + n)) / 2;
-		*(frame1 + v1_pos + n) = (*(frame1 + v1_pos + n) + *(frame2 + v2_pos + n)) / 2;
+		*(YUV + n) = (*(frame1 + n) + *(frame2 + n)) / 2;
+		*(YUV + n + 1) = (*(frame1 + n + 1) + *(frame2 + n + 1)) / 2;
+		*(YUV + n + 2) = (*(frame1 + n + 2) + *(frame2 + n + 2)) / 2;
+		*(YUV + n + 3) = (*(frame1 + n + 3) + *(frame2 + n + 3)) / 2;
+
+		*(YUV + cnt + uv_cnt) = (*(frame1 + image_size + uv_cnt) + *(frame2 + image_size1 + uv_cnt)) / 2;
+		*(YUV + cnt + out_uv_size + uv_cnt) = (*(frame1 + v_off1 + uv_cnt) + *(frame2 + v_off2 + uv_cnt)) / 2;
+
+		++uv_cnt;
 	}
 	return (1);
 }
 
-uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint8_t *frame2)
+uint8_t ImageProcessing::FrameAdd_SIMD(uint8_t *frame1, uint8_t *frame2)
 {
 	uint64_t cnt = image_size;
 	uint64_t uv_cnt = 0;
