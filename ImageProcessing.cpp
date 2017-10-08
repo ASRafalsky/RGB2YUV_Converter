@@ -12,9 +12,21 @@ ImageProcessing::ImageProcessing(uint16_t Width, uint16_t Height)
 
 	YUV_frameSize = image_size + image_size / 2;
 
-	YUV = new uint8_t[YUV_frameSize];
+	/*YUV = new uint8_t[YUV_frameSize];
 	u = new uint8_t[uv_size + 12];
-	v = new uint8_t[uv_size + 12];
+	v = new uint8_t[uv_size + 12];*/
+
+	vYUV.reserve(YUV_frameSize);
+	vu.reserve(uv_size + 12);
+	vv.reserve(uv_size + 12);
+
+	vYUV.resize(YUV_frameSize);
+	vu.resize(uv_size + 12);
+	vv.resize(uv_size + 12);
+
+	YUV = vYUV.data();
+	u = vu.data();
+	v = vv.data();
 }
 
 ImageProcessing::ImageProcessing(uint16_t Width1, uint16_t Height1, uint16_t Width2, uint16_t Height2)
@@ -35,15 +47,39 @@ ImageProcessing::ImageProcessing(uint16_t Width1, uint16_t Height1, uint16_t Wid
 
 	if (image_size > image_size1)
 	{
-		YUV = new uint8_t[YUV_frameSize];
+		/*YUV = new uint8_t[YUV_frameSize];
 		u = new uint8_t[uv_size + 8];
-		v = new uint8_t[uv_size + 8];
+		v = new uint8_t[uv_size + 8];*/
+
+		vYUV.reserve(YUV_frameSize);
+		vu.reserve(uv_size + 8);
+		vv.reserve(uv_size + 8);
+
+		vYUV.resize(YUV_frameSize);
+		vu.resize(uv_size + 8);
+		vv.resize(uv_size + 8);
+
+		YUV = vYUV.data();
+		u = vu.data();
+		v = vv.data();
 	}
 	else
 	{
-		YUV = new uint8_t[YUV_frameSize1];
+		/*YUV = new uint8_t[YUV_frameSize1];
 		u = new uint8_t[uv_size1 + 8];
-		v = new uint8_t[uv_size1 + 8];
+		v = new uint8_t[uv_size1 + 8];*/
+
+		vYUV.reserve(YUV_frameSize1);
+		vu.reserve(uv_size1 + 8);
+		vv.reserve(uv_size1 + 8);
+
+		vYUV.resize(YUV_frameSize1);
+		vu.resize(uv_size1 + 8);
+		vv.resize(uv_size1 + 8);
+
+		YUV = vYUV.data();
+		u = vu.data();
+		v = vv.data();
 	}
 }
 
@@ -87,7 +123,7 @@ void ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_of
 	}
 }
 
-uint8_t ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t vpos)
+uint8_t ImageProcessing::Bitmap2yuv_SIMD(uint8_t *bgr, uint32_t upos, uint32_t vpos)
 {
 	uint64_t i = 0;
 
@@ -163,28 +199,39 @@ uint8_t ImageProcessing::Bitmap2yuv_SMID(uint8_t *bgr, uint32_t upos, uint32_t v
 	return (1);
 }
 
-uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint64_t image1_size, uint8_t *frame2, uint64_t image2_size)
+uint8_t ImageProcessing::FrameAdd(uint8_t *frame1, uint8_t *frame2)
 {
-	uint64_t cnt = image1_size;
-	uint64_t v1_pos = image1_size + image1_size / 4;
-	uint64_t v2_pos = image2_size + image2_size / 4;
+	uint64_t cnt = image_size;
+	uint64_t uv_cnt = 0;
+	uint64_t out_frame_size = YUV_frameSize1;
+	uint64_t out_uv_size = uv_size1;
 
-	if (image1_size > image2_size)
-		cnt = image2_size;
+	uint64_t v_off1 = image_size + uv_size;
+	uint64_t v_off2 = image_size1 + uv_size1;
 
-	for (uint64_t n = 0; n < cnt; n++)
+	if (image_size > image_size1)
 	{
-		*(frame1 + n) = (*(frame1 + n) + *(frame2 + n)) / 2;
+		cnt = image_size1;
+		out_frame_size = YUV_frameSize;
+		out_uv_size = uv_size;
 	}
-	for (uint64_t n = 0; n < cnt / 4; n++)
+
+	for (uint64_t n = 0; n < cnt; n += 4)
 	{
-		*(frame1 + image1_size + n) = (*(frame1 + image1_size + n) + *(frame2 + image2_size + n)) / 2;
-		*(frame1 + v1_pos + n) = (*(frame1 + v1_pos + n) + *(frame2 + v2_pos + n)) / 2;
+		*(YUV + n) = (*(frame1 + n) + *(frame2 + n)) / 2;
+		*(YUV + n + 1) = (*(frame1 + n + 1) + *(frame2 + n + 1)) / 2;
+		*(YUV + n + 2) = (*(frame1 + n + 2) + *(frame2 + n + 2)) / 2;
+		*(YUV + n + 3) = (*(frame1 + n + 3) + *(frame2 + n + 3)) / 2;
+
+		*(YUV + cnt + uv_cnt) = (*(frame1 + image_size + uv_cnt) + *(frame2 + image_size1 + uv_cnt)) / 2;
+		*(YUV + cnt + out_uv_size + uv_cnt) = (*(frame1 + v_off1 + uv_cnt) + *(frame2 + v_off2 + uv_cnt)) / 2;
+
+		++uv_cnt;
 	}
 	return (1);
 }
 
-uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint8_t *frame2)
+uint8_t ImageProcessing::FrameAdd_SIMD(uint8_t *frame1, uint8_t *frame2)
 {
 	uint64_t cnt = image_size;
 	uint64_t uv_cnt = 0;
@@ -249,4 +296,19 @@ uint8_t ImageProcessing::FrameAdd_SMID(uint8_t *frame1, uint8_t *frame2)
 uint8_t* ImageProcessing::GetYUV()
 {
 	return (YUV);
+}
+
+uint8_t ImageProcessing::GetYUV(std::vector<uint8_t> &v)
+{
+	std::lock_guard<std::recursive_mutex> locker(mtx);
+
+	if (qYUV.empty())
+	{
+		return (0);
+	}
+
+	v = qYUV.front();
+	qYUV.pop();
+
+	return (1);
 }

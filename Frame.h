@@ -1,6 +1,9 @@
 #pragma once
+#include <fstream>
 #include <iostream>
-using namespace std;
+#include <queue>
+#include <vector>
+#include <mutex>
 
 class Frame
 {
@@ -12,9 +15,13 @@ private:
 	const char *filename;
 	FILE* f;
 	uint8_t* frame;
+	
+	std::queue <std::vector<uint8_t>> qFrame;
+	std::vector<uint8_t> vIn;
+	std::recursive_mutex mtx;
 
 public:
-	Frame(uint32_t, uint32_t, const char*, const char*);
+	Frame(uint32_t, uint32_t, const char*, const char*, const char*);
 	~Frame();
 
 	uint64_t RGBframeSize();
@@ -27,5 +34,6 @@ public:
 	uint8_t writeYUVFrame(uint8_t* new_frame);
 
 	uint8_t* getFrame();
+	uint8_t getFrame(std::vector<uint8_t> &v);
 };
 
