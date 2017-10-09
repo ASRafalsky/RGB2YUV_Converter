@@ -7,7 +7,7 @@
 #include "Frame.h"
 #include "ImageProcessing.h"
 
-#define THREAD
+//#define THREAD
 #ifndef THREAD
 	#define SIMD
 #endif // !THREAD
@@ -92,9 +92,6 @@ uint8_t test_add(uint8_t *frame1, uint8_t *frame2, uint8_t* result, uint64_t YUV
 
 int main()
 {
-
-	uint64_t i = 0;
-
 	Frame RGB_Frame(RGB_Width, RGB_Height, bitmapfile, "rb");
 	Frame YUV_Frame(YUV_Width, YUV_Height, yuvfile, "rb");
 	Frame NewYUV_Frame(YUV_Width, YUV_Height, NewYUV, "wb");
@@ -152,7 +149,7 @@ int main()
 	uint8_t* yuv_frame;
 	uint64_t YUV_imSize1 = YUV_Frame.imageSize();
 	uint64_t YUV_imSize2 = RGB_Frame.imageSize();
-	while (YUV_Frame.readYUVFrame(i))
+	while (YUV_Frame.readYUVFrame())
 	{
 		yuv_frame = YUV_Frame.getFrame();
 #ifndef SIMD
@@ -182,7 +179,6 @@ int main()
 
 #endif // SIMD
 		NewYUV_Frame.writeYUVFrame(FRAMES_ADD.GetYUV());
-		++i;
 	}
 
 #ifdef THREAD

@@ -51,19 +51,19 @@ uint8_t Frame::readBMP()
 	return (1);
 }
 
-uint8_t Frame::readYUVFrame(uint64_t framenum)
+uint8_t Frame::readYUVFrame()
 {
-	uint64_t frameStartNum = framenum * yuv_frame_size;
-	fseek(f, frameStartNum, SEEK_SET);
+	//uint64_t frameStartNum = framenum * yuv_frame_size;
+	//fseek(f, frameStartNum, SEEK_SET);
 	size_t res = fread(frame, sizeof(unsigned char), yuv_frame_size, f); // read the rest of the data at once
 
-	if (res != yuv_frame_size)
+	/*if (res != yuv_frame_size)
 	{
 		fprintf(stdout, "End of file was reached\n");
 		fclose(f);
 		return (0);
-	}
-	return (1);
+	}*/
+	return (res == yuv_frame_size);
 }
 
 uint8_t Frame::readYUVFile()

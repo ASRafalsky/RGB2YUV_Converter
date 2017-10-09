@@ -22,7 +22,7 @@ public:
 
 	uint8_t readBMP();
 	uint8_t readYUVFile();
-	uint8_t readYUVFrame(uint64_t framenum);
+	uint8_t readYUVFrame();
 	uint8_t writeYUVFrame(uint8_t* new_frame);
 
 	uint8_t* getFrame();
