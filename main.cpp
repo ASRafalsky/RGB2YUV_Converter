@@ -105,7 +105,7 @@ int main()
 	uint8_t* yuv_from_rgb_frame = NULL;
 
 #ifdef SIMD
-	RGB2YUV.Bitmap2yuv_SIMD(bgr_frame, 0, 0);
+	RGB2YUV.Bitmap2yuv_SIMD(bgr_frame, 0);
 	yuv_from_rgb_frame = RGB2YUV.GetYUV();
 #endif // SMID
 
