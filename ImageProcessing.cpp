@@ -11,9 +11,12 @@ ImageProcessing::ImageProcessing(uint16_t Width, uint16_t Height)
 	uv_size = image_size / 4;
 
 	YUV_frameSize = image_size + image_size / 2;
+	
+	YUV = NULL;
+	u = NULL;
+	v = NULL;
 
 	YUV = new uint8_t[YUV_frameSize + 8];
-	u = new uint8_t[uv_size + 8];
 	v = new uint8_t[uv_size + 8];
 }
 
@@ -50,7 +53,10 @@ ImageProcessing::ImageProcessing(uint16_t Width1, uint16_t Height1, uint16_t Wid
 ImageProcessing::~ImageProcessing()
 {
 	delete[] YUV;
-	delete[] u;
+
+	if(u)
+		delete[] u;
+
 	delete[] v;
 }
 

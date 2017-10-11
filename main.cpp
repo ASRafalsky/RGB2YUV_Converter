@@ -12,7 +12,7 @@
 	#define SIMD
 #endif // !THREAD
 
-#define TEST_EN
+//#define TEST_EN
 
 const char	*yuvfile	= "park_joy_1080p50.yuv";
 const char	*NewYUV		= "NEW.yuv";
