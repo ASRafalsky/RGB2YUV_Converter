@@ -2,7 +2,7 @@
 #include "Frame.h"
 
 
-Frame::Frame(uint32_t Width, uint32_t Height, const char* Filename, const char* type, const char* mode)
+Frame::Frame(uint32_t Width, uint32_t Height, const char* Filename, const char* mode)
 {
 	width = Width;
 	height = Height;

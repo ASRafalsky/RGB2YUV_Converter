@@ -5,8 +5,6 @@
 #include <iostream>
 #include "Frame.h"
 #include "ImageProcessing.h"
-#include <queue>
-#include <vector>
 
 #define THREAD
 #ifndef THREAD

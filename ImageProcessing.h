@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <stdint.h>
+#include <thread>
 #include "emmintrin.h"
 #include "tmmintrin.h"
 

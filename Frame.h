@@ -14,7 +14,7 @@ private:
 	uint8_t* frame;
 
 public:
-	Frame(uint32_t, uint32_t, const char*, const char*, const char*);
+	Frame(uint32_t, uint32_t, const char*, const char*);
 	~Frame();
 
 	uint64_t RGBframeSize();
