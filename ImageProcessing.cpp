@@ -60,7 +60,7 @@ ImageProcessing::~ImageProcessing()
 	delete[] v;
 }
 
-void ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th)
+uint8_t ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_offset, uint32_t upos_offset, uint32_t vpos_offset, uint16_t height_p_th)
 {
 	uint64_t i = bgr_offset;
 	for (uint16_t line = 0; line < height_p_th; line += 2)
@@ -91,6 +91,43 @@ void ImageProcessing::Bitmap2Yuv420p(uint8_t* bgr, uint8_t* yuv, uint64_t bgr_of
 			yuv[i++] = ((77 * r + 150 * g + 29 * b) >> 8);
 		}
 	}
+	return (1);
+}
+
+uint8_t ImageProcessing::Bitmap2yuv_THREAD(uint8_t *bgr)
+{
+	uint64_t yuv1_st_1 = image_size / 4;
+	uint64_t yuv1_st_2 = image_size / 2;
+	uint64_t yuv1_st_3 = image_size / 4 + image_size / 2;
+
+	uint64_t RGB_bmp_st_0 = 0;
+	uint64_t RGB_bmp_st_1 = image_size / 4;
+	uint64_t RGB_bmp_st_2 = RGB_bmp_st_1 * 2;
+	uint64_t RGB_bmp_st_3 = RGB_bmp_st_2 + RGB_bmp_st_1;
+
+	uint64_t upos_st_0 = image_size;
+	uint64_t upos_st_1 = image_size + image_size / 16;
+	uint64_t upos_st_2 = upos_st_1 + image_size / 16;
+	uint64_t upos_st_3 = upos_st_2 + image_size / 16;
+
+	uint64_t vpos_st_0 = image_size + image_size / 4;
+	uint64_t vpos_st_1 = vpos_st_0 + image_size / 16;
+	uint64_t vpos_st_2 = vpos_st_1 + image_size / 16;
+	uint64_t vpos_st_3 = vpos_st_2 + image_size / 16;
+
+	uint16_t height_per_thread = height / 4;
+
+	std::thread t0(&ImageProcessing::Bitmap2Yuv420p, this, std::ref(bgr), this->YUV, RGB_bmp_st_0, upos_st_0, vpos_st_0, height_per_thread);
+	std::thread t1(&ImageProcessing::Bitmap2Yuv420p, this, std::ref(bgr), this->YUV, RGB_bmp_st_1, upos_st_1, vpos_st_1, height_per_thread);
+	std::thread t2(&ImageProcessing::Bitmap2Yuv420p, this, std::ref(bgr), this->YUV, RGB_bmp_st_2, upos_st_2, vpos_st_2, height_per_thread);
+	std::thread t3(&ImageProcessing::Bitmap2Yuv420p, this, std::ref(bgr), this->YUV, RGB_bmp_st_3, upos_st_3, vpos_st_3, height_per_thread);
+
+	t0.join();
+	t1.join();
+	t2.join();
+	t3.join();
+
+	return (1);
 }
 
 uint8_t ImageProcessing::Bitmap2yuv_SIMD(uint8_t *bgr, uint32_t uvpos)
