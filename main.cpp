@@ -36,7 +36,7 @@ int main()
 
 #ifdef SIMD
 	RGB2YUV.Bitmap2yuv_SIMD(bgr_frame, 0);
-#endif // SMID
+#endif // SIMD
 
 #ifdef THREAD
 	RGB2YUV.Bitmap2yuv_THREAD(bgr_frame);
